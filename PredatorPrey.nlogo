@@ -12,6 +12,7 @@ to setup
 
   create-prey number-prey  ; create the prey, then initialize their variables
   [
+    set heading random 360
     set shape  "sheep"
     set color white
     set size 20  ; easier to see
@@ -20,6 +21,7 @@ to setup
 
   create-predators number-predator  ; create the predator, then initialize their variables
   [
+    set heading random 360
     set shape "wolf"
     set color blue
     set size 20  ; easier to see
@@ -43,11 +45,35 @@ to go
   tick
 end
 
-to prey-move  ; turtle procedure
-  rt random 50
-  lt random 50
+to prey-move  ; turtle procedure goes through all the angles between -14 and 14 degrees. Checks to see which will minimise the distance from the 2 closest predators and sets that as direction.
+  let min-list []
+  let angle -14
+  while [angle <= 14] [
+    rt angle
+    set angle angle + 2
+    fd 1
+    let a [distance myself] of min-n-of 2 predators [distance myself]
+    let b min a
+    set b b ^ (2)
+    let c max a
+    let d sum (list b c)
+    set min-list lput d min-list
+    fd -1
+  ]
+  ; show min-list
+  let pos position min min-list min-list
+  rt pos - 14
   fd 1
 end
+
+
+; If i am facing with heading between -45 to 45
+; If predator 1 is above and predator 2 is above:
+;      if both to right (direction = -14)
+;      if both to left (direction = 14)
+;      if one on either side:
+;           x = distance_between_both
+;           let dist1 = distance of predator 1 to myself (x axis)
 
 to predator-move  ; turtle procedure
   rt random 50
@@ -57,11 +83,28 @@ end
 
 
 to eat-prey  ; predator procedure
-  ask prey with [killRange >= sqrt ((([xcor] of myself - xcor)^(2)) + (([ycor] of myself - ycor)^(2)))] [
+  ask prey with [killRange >= distance myself] [
     set kills kills + 1
     die
   ]
 end
+
+
+
+;; suppose mylist is [5 7 10]
+;; set mylist fput 2 mylist
+;; mylist is now [2 5 7 10]
+
+
+
+
+;; suppose mylist is [2 7 4 7 "Bob"]
+;; show position 7 mylist
+; => 1
+; show position 10 mylist
+; => false
+; show position "in" "string"
+; => 3
 @#$#@#$#@
 GRAPHICS-WINDOW
 241
@@ -84,8 +127,8 @@ GRAPHICS-WINDOW
 499
 -499
 0
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -163,7 +206,7 @@ killRange
 killRange
 0
 50
-5.0
+4.0
 1
 1
 NIL
