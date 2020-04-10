@@ -3,7 +3,7 @@ globals [ max-prey  kills ]
 ; Sheep and wolves are both breeds of turtles
 breed [ prey a-prey ]  ; sheep is its own plural, so we use "a-sheep" as the singular
 breed [ predators predator ]
-
+prey-own [ is_dead ]
 
 to setup
   clear-all
@@ -13,19 +13,23 @@ to setup
   create-prey number-prey  ; create the prey, then initialize their variables
   [
     set heading random 360
+    set is_dead false
     set shape  "sheep"
     set color white
-    set size 20  ; easier to see
+    set size 0.05  ; easier to see
     setxy random-xcor random-ycor
   ]
+
 
   create-predators number-predator  ; create the predator, then initialize their variables
   [
     set heading random 360
     set shape "wolf"
     set color blue
-    set size 20  ; easier to see
+    set size 0.05  ; easier to see
     setxy random-xcor random-ycor
+    create-links-to prey
+    create-links-to other predators
   ]
   reset-ticks
 end
@@ -34,9 +38,11 @@ end
 
 to go
   if ticks >= maxSteps [ stop ]
-  if not any? turtles [ stop ]
+  if not any? prey with [is_dead = false ] [ stop ]
   ask prey [
-    prey-move
+    if not is_dead [
+      prey-move
+    ]
   ]
   ask predators [
     predator-move
@@ -48,9 +54,10 @@ end
 to prey-move  ; turtle procedure goes through all the angles between -14 and 14 degrees. Checks to see which will minimise the distance from the 2 closest predators and sets that as direction.
   let min-list []
   let angle -14
+  let multiple 2
   while [angle <= 14] [
     rt angle
-    set angle angle + 2
+    set angle angle + multiple
     fd 1
     let a [distance myself] of min-n-of 2 predators [distance myself]
     let b min a
@@ -62,7 +69,32 @@ to prey-move  ; turtle procedure goes through all the angles between -14 and 14 
   ]
   ; show min-list
   let pos position min min-list min-list
-  rt pos - 14
+  rt multiple * pos - 14
+  fd 1
+end
+
+to prey-movea  ; turtle procedure goes through all the angles between -14 and 14 degrees. Checks to see which will minimise the distance from the 2 closest predators and sets that as direction.
+  let ax [xcor] of min-one-of predators [distance myself]
+  let ay [ycor] of min-one-of predators [distance myself]
+
+  let min-list []
+  let angle -14
+  let multiple 2
+  while [angle <= 14] [
+    rt angle
+    set angle angle + multiple
+    fd 1
+    let a [distance myself] of min-n-of 2 predators [distance myself]
+    let b min a
+    set b b ^ (2)
+    let c max a
+    let d sum (list b c)
+    set min-list lput d min-list
+    fd -1
+  ]
+  ; show min-list
+  let pos position min min-list min-list
+  rt multiple * pos - 14
   fd 1
 end
 
@@ -76,44 +108,27 @@ end
 ;           let dist1 = distance of predator 1 to myself (x axis)
 
 to predator-move  ; turtle procedure
-  rt random 50
-  lt random 50
+  let target min-one-of prey [distance myself]
   fd 1
 end
 
 
 to eat-prey  ; predator procedure
-  ask prey with [killRange >= distance myself] [
+  ask prey with [not is_dead and killRange / 500 >= distance myself] [
     set kills kills + 1
-    die
+    set is_dead true
+    set shape "x"
   ]
 end
-
-
-
-;; suppose mylist is [5 7 10]
-;; set mylist fput 2 mylist
-;; mylist is now [2 5 7 10]
-
-
-
-
-;; suppose mylist is [2 7 4 7 "Bob"]
-;; show position 7 mylist
-; => 1
-; show position 10 mylist
-; => false
-; show position "in" "string"
-; => 3
 @#$#@#$#@
 GRAPHICS-WINDOW
 241
-16
-749
-525
+10
+1249
+1019
 -1
 -1
-1.0
+500.0
 1
 10
 1
@@ -124,8 +139,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-499
--499
+1
+-1
 0
 1
 1
@@ -206,7 +221,7 @@ killRange
 killRange
 0
 50
-4.0
+5.0
 1
 1
 NIL
@@ -246,10 +261,10 @@ kills
 12
 
 PLOT
-40
-543
-752
-797
+1271
+25
+1873
+279
 Predator count and Kills
 time
 totals
@@ -261,7 +276,7 @@ true
 false
 "" ""
 PENS
-"predators" 1.0 0 -2674135 true "" "plot count prey"
+"predators" 1.0 0 -2674135 true "" "plot count prey with [ is_dead = false ]"
 "kills" 1.0 0 -13840069 true "" "plot kills"
 
 MONITOR
@@ -270,7 +285,7 @@ MONITOR
 151
 387
 Number of Prey
-count prey
+count prey with [ is_dead = false ]
 2
 1
 12
