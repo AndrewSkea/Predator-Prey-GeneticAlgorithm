@@ -1,78 +1,85 @@
-globals [ max-prey  kills  dist]
+globals [
+  ;; Turtle related
+  max-prey
+  kills
+  dist
+  ;; GA related
+  currentGeneration
+  averageFitness
+  highest-avg-fitness
+  highest-individual-score
+  no-agent-actions
+  no-agent-states
+  chromosome-length
+]
 
 ; Sheep and wolves are both breeds of turtles
 breed [ prey a-prey ]  ; sheep is its own plural, so we use "a-sheep" as the singular
 breed [ predators predator ]
 prey-own [ is_dead ]
 
+predators-own [
+  chromosome
+  currentState
+  points
+  generation
+]
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Setup procedures ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
 to setup
   clear-all
+  reset-ticks
+  set currentGeneration 0
   set kills 0
   set dist 1 / 500
-  ifelse netlogo-web? [ set max-prey 25000 ] [ set max-prey 25000 ]
 
-  create-prey number-prey  ; create the prey, then initialize their variables
+  ;;these are defined by the design (agents can move/rotate, and can encounter 4 types of space so 16 states. 4 * 16 * 2 -> 128
+  set no-agent-actions 4
+  set no-agent-states 16
+  set chromosome-length (no-agent-actions * no-agent-states)
+
+  create-prey number-prey [setup-prey]
+  create-predators number-predators [setup-predators]
+end
+
+to setup-prey
+  set heading random 360
+  set is_dead false
+  set shape  "sheep"
+  set color white
+  set size 0.03  ; easier to see
+  setxy random-xcor random-ycor
+end
+
+
+to setup-predators
+  set generation currentGeneration
+  set size 0.03
+  set shape "wolf"
+  set color blue
+  set points 0
+  setxy random-xcor random-ycor
+  set heading random 360
+
+  ;; when a new agent is created during the tournament phase it will have a chance to mutate chromosome data
+  ifelse generation = 0
   [
-    set heading random 360
-    set is_dead false
-    set shape  "sheep"
-    set color white
-    set size 0.03  ; easier to see
-    setxy random-xcor random-ycor
+    setup-chromosomes
   ]
-
-
-  create-predators number-predator  ; create the predator, then initialize their variables
   [
-    set heading random 360
-    set shape "wolf"
-    set color blue
-    set size 0.03  ; easier to see
-    setxy random-xcor random-ycor
-    ;; create-links-to prey
-    ;; create-links-to other predators
+    mutate-chromosomes
   ]
-  reset-ticks
 end
 
-
-
-to go
-  if ticks >= maxSteps [ stop ]
-  if not any? prey with [is_dead = false ] [ stop ]
-  ask prey [
-    if not is_dead [
-      prey-move
-    ]
-  ]
-  ask predators [
-    predator-move
-    eat-prey
-  ]
-  tick
+to setup-chromosomes
+  let statesBlank n-values chromosome-length [randomState]
+  set chromosome statesBlank
+  set currentState random no-agent-states
 end
 
-to prey-move2  ; turtle procedure goes through all the angles between -14 and 14 degrees. Checks to see which will minimise the distance from the 2 closest predators and sets that as direction.
-  let min-list []
-  let angle -14
-  let multiple 2
-  while [angle <= 14] [
-    rt angle
-    set angle angle + multiple
-    fd dist
-    let a [distance myself] of min-n-of 2 predators [distance myself]
-    let b min a
-    set b b ^ (2)
-    let c max a
-    let d sum (list b c)
-    set min-list lput d min-list
-    fd -1 / 500
-  ]
-  ; show min-list
-  let pos position max min-list min-list
-  rt multiple * pos - 14
-  fd dist
-end
 
 to prey-move
   let target min-one-of predators [distance myself]
@@ -89,26 +96,282 @@ to prey-move
 end
 
 
-to predator-move
-  let target min-one-of prey [distance myself]
+to go
+  if ticks < maxSteps
+  [
+    ask prey [
+      if not is_dead [
+        prey-move
+      ]
+    ]
+    tick-predators
+    tick
+  ]
+;; once we reach maxSteps ticks we move to the next generation
+  if ticks = maxSteps
+  [
+    endOfCycle
+    reset-ticks
+  ]
+end
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; GA Procedures ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+to endOfCycle
+  let sumFitness 0
+  set kills 0
+  ask predators [set sumFitness (sumFitness + points)]
+  set averageFitness (sumFitness / number-predators)
+  print "Average Fitness: "
+  print averageFitness
+  if averageFitness > highest-avg-fitness [set highest-avg-fitness averageFitness]
+  hatchNextGeneration
+end
+
+to hatchNextGeneration
+
+  let tempSet (predators with [generation = currentGeneration])
+
+  set currentGeneration (currentGeneration + 1)
+
+
+  ask tempSet
+  [
+    if points > highest-individual-score [set highest-individual-score points]
+    if averageFitness = 0 [set points 1]
+  ]
+
+  if averageFitness = 0 [ set averageFitness 1]
+
+  while[ count predators < (number-predators * 2)]
+  [
+    ask tempSet
+    [
+      if count predators < (number-predators * 2)
+      [
+
+        if (points / averageFitness) > random-float 1
+        [
+          hatch-predators 1 [setup-predators]
+        ]
+      ]
+    ]
+  ]
+  ask tempSet [die]
+  ask prey [die]
+  create-prey number-prey [setup-prey]
+
+  crossOver
+end
+
+
+
+to mutate-chromosomes
+
+ ;; set chromosome (map (ifelse (mutationChance > random 1) [?][? -> randomState]) chromosome)
+
+ ;; conditional mappings don't work in netlogo 6.x for some reason
+ ;; having to use a while loop to replicate mapping
+
+  set chromosome mutate-chromosome
+
+end
+
+to-report mutate-chromosome
+  let j 0
+  let stateBlock chromosome
+    while [j < (no-agent-actions * no-agent-states)]
+    [
+      if mutationChance > random-float 1
+      [
+        set stateBlock replace-item j stateBlock randomState
+      ]
+    set j ( j + 1 )
+    ]
+  report stateBlock
+end
+
+
+to crossOver
+  let tempSet (predators with [generation = currentGeneration])
+
+  while[0.8 > random-float 1]
+  [
+    let newSet (n-of 2 tempSet)
+    ;; pick a random number between 0 and 32 and swap chromosome block at that point
+    let slicePoint random (round (chromosome-length / 2))
+
+    let agent1 one-of newSet
+
+    ask agent1
+    [
+      let agent2 other newSet
+      let slice sublist chromosome 0 slicePoint
+      let slice1 sublist chromosome slicePoint (chromosome-length)
+
+      ask agent2
+      [
+        let slice2 sublist chromosome 0 slicePoint
+        let slice3 sublist chromosome slicePoint (chromosome-length)
+        set chromosome join-lists slice2 slice1
+        ask agent1
+        [
+          set chromosome join-lists slice slice3
+        ]
+      ]
+
+    ]
+    ;; make a copy of that state block for both agents
+    ;; then swap them and make a new list for each agents
+  ]
+end
+
+to-report join-lists[list1 list2]
+  let jMax length list2
+  let j 0
+    while [j < jMax]
+    [
+      set list1 lput (item j list2) list1
+      set j ( j + 1 )
+    ]
+  report list1
+end
+
+
+to-report randomState
+  report list (random no-agent-actions) (random no-agent-states)
+end
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Agent Procedures;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+to tick-predators
+  ask predators
+  [
+    action
+  ]
+end
+
+to action
+
+  ;; what is infront of you?
+  let ahead look-here
+
+  ;;pair-value for what is infront of you and what state you are in
+  ;; gets correct point in the chromosome list
+  let state item ((ahead * no-agent-states) + currentState) chromosome
+
+  let move (item 0 state)
+  let newState (item 1 state)
+
+  ifelse move = 0 [ turnTowardsClosestTurtle ]
+[ ifelse move = 1 [ turnLeft ]
+[ ifelse move = 2 [ goStraight ]
+[ ifelse move = 3 [ turnRight ]
+[ ;; default case
+  ]]]]
+
+  updateScore
+
+  set currentState newState
+end
+
+to-report look-here
+
+  ifelse checkIfMostPreyToLeft [report 2]
+  [ ifelse checkIfMostPreyToRight [report 3]
+  [ ifelse checkPreyWithin3RangesInFront [report 1]
+  [ ifelse checkIfMostPredatorsInFront [report 0]
+  [ ;; default case
+  ]]]]
+ end
+
+;; CHECKS
+to-report checkIfMostPreyToLeft
+  let x mean [xcor] of prey with [ not is_dead ]
+  let y mean [ycor] of prey with [ not is_dead ]
+  let avg_turtle_heading towardsxy x y
+  let angle subtract-headings heading avg_turtle_heading
+  ifelse angle > 0 [ report true ] [ report false ]
+end
+
+to-report checkIfMostPreyToRight
+  let x mean [xcor] of prey with [ not is_dead ]
+  let y mean [ycor] of prey with [ not is_dead ]
+  let avg_turtle_heading towardsxy x y
+  let angle subtract-headings heading avg_turtle_heading
+  ifelse angle < 0 [ report true ] [ report false ]
+end
+
+to-report checkPreyWithin3RangesInFront
+  let r 3 * killRange / 500
+  let c count prey with [not is_dead ] in-cone r 36
+  ;; let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
+  ifelse c > 0 [report true] [report false]
+end
+
+to-report checkIfMostPredatorsInFront
+  let r 5 * killRange / 500
+  let c count predators in-cone r 40
+  ;; let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
+  ifelse c > 0 [report true] [report false]
+end
+
+
+;; ACTIONS
+to turnTowardsClosestTurtle
+  let target min-one-of predators [distance myself]
   let angle subtract-headings heading [heading] of target
   let final_angle angle
 
   ifelse angle > 0 [
-    set final_angle min (list angle 14 )
+    set final_angle -14
   ] [
-    set final_angle max (list angle -14 )
+    set final_angle 14
   ]
   rt final_angle
   fd dist
 end
 
+to turnLeft
+  lt 14
+  fd dist
+end
 
-to eat-prey  ; predator procedure
+to turnRight
+  rt 14
+  fd dist
+end
+
+to goStraight
+  fd dist
+end
+
+to updateScore
+  let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
+  if c >= 1 [
+    set points (points + 1)
+  ]
+
+  let b count prey with [not is_dead and killRange / 500 >= distance myself]
+  if b >= 1 [
+    set points (points + 2)
+  ]
+
   ask prey with [not is_dead and killRange / 500 >= distance myself] [
-    set kills kills + 1
-    set is_dead true
-    set shape "x"
+      set kills kills + 1
+      set is_dead true
+      set shape "x"
   ]
 end
 @#$#@#$#@
@@ -144,8 +407,8 @@ SLIDER
 23
 206
 56
-number-predator
-number-predator
+number-predators
+number-predators
 0
 500
 50.0
@@ -155,25 +418,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-37
-80
-209
-113
+34
+67
+206
+100
 number-prey
 number-prey
 0
 500
-150.0
+100.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-37
-179
-100
-212
+36
+222
+99
+255
 NIL
 setup
 NIL
@@ -187,10 +450,10 @@ NIL
 1
 
 BUTTON
-127
-180
-190
-213
+143
+221
+206
+254
 NIL
 go
 T
@@ -204,10 +467,10 @@ NIL
 1
 
 SLIDER
-38
-136
-210
-169
+34
+116
+206
+149
 killRange
 killRange
 0
@@ -219,21 +482,21 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-39
-258
-194
-318
+44
+299
+198
+359
 maxSteps
-500.0
+100.0
 1
 0
 Number
 
 MONITOR
-38
-401
-182
-450
+43
+428
+187
+477
 Number of Predators
 count predators
 0
@@ -241,10 +504,10 @@ count predators
 12
 
 MONITOR
-40
-470
-145
-519
+42
+486
+147
+535
 Number of Kills
 kills
 2
@@ -271,10 +534,10 @@ PENS
 "kills" 1.0 0 -13840069 true "" "plot kills"
 
 MONITOR
-39
-338
-151
-387
+44
+365
+156
+414
 Number of Prey
 count prey with [ is_dead = false ]
 2
@@ -282,10 +545,10 @@ count prey with [ is_dead = false ]
 12
 
 BUTTON
-78
-220
-141
-253
+90
+260
+153
+293
 clear
 clear-all
 NIL
@@ -297,6 +560,100 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+34
+166
+206
+199
+mutationChance
+mutationChance
+0
+1
+0.05
+0.01
+1
+NIL
+HORIZONTAL
+
+MONITOR
+787
+17
+869
+66
+Generation
+currentGeneration
+17
+1
+12
+
+MONITOR
+788
+83
+934
+128
+Highest Individual Score
+highest-individual-score
+17
+1
+11
+
+MONITOR
+790
+145
+938
+190
+Highest Average Fitness
+highest-avg-fitness
+17
+1
+11
+
+SLIDER
+791
+258
+963
+291
+maxGenerations
+maxGenerations
+0
+1000
+0.0
+1
+1
+NIL
+HORIZONTAL
+
+PLOT
+790
+304
+1545
+796
+Fitness Plot
+generation
+Fitness Value
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"highest-avg-fitness" 0.01 0 -13345367 true "" "plot highest-avg-fitness"
+"highest-individual-score" 0.01 0 -955883 true "" "plot highest-individual-score"
+"averageFitness" 0.01 0 -13840069 true "" "plot averageFitness"
+
+MONITOR
+791
+201
+940
+246
+Current Average Fitness
+averageFitness
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
