@@ -2,6 +2,7 @@ globals [
   ;; Turtle related
   max-prey
   kills
+  killRadius
   dist
   ;; GA related
   currentGeneration
@@ -34,7 +35,9 @@ to setup
   reset-ticks
   set currentGeneration 0
   set kills 0
-  set dist 1 / 500
+  ;;set dist 1 / 500
+  set dist 0.005
+  set killRadius killRange / 500
 
   ;;these are defined by the design (agents can move/rotate, and can encounter 4 types of space so 16 states. 4 * 16 * 2 -> 128
   set no-agent-actions 4
@@ -50,14 +53,14 @@ to setup-prey
   set is_dead false
   set shape  "sheep"
   set color white
-  set size 0.03  ; easier to see
+  set size 0.02  ; easier to see
   setxy random-xcor random-ycor
 end
 
 
 to setup-predators
   set generation currentGeneration
-  set size 0.03
+  set size 0.02
   set shape "wolf"
   set color blue
   set points 0
@@ -97,6 +100,7 @@ end
 
 
 to go
+  if currentGeneration >= maxGenerations [ stop ]
   if ticks < maxSteps
   [
     ask prey [
@@ -149,22 +153,14 @@ to hatchNextGeneration
 
   while[ count predators < (number-predators * 2)]
   [
-    ask tempSet
-    [
-      if count predators < (number-predators * 2)
-      [
-
-        if (points / averageFitness) > random-float 1
-        [
-          hatch-predators 1 [setup-predators]
-        ]
-      ]
-    ]
+    let preds n-of tournamentSize predators
+    let a max-n-of 1 preds [points]
+    ask a [ hatch-predators 1 [setup-predators] ]
   ]
+
   ask tempSet [die]
   ask prey [die]
   create-prey number-prey [setup-prey]
-
   crossOver
 end
 
@@ -314,16 +310,14 @@ to-report checkIfMostPreyToRight
 end
 
 to-report checkPreyWithin3RangesInFront
-  let r 3 * killRange / 500
+  let r 3 * killRadius
   let c count prey with [not is_dead ] in-cone r 36
-  ;; let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
   ifelse c > 0 [report true] [report false]
 end
 
 to-report checkIfMostPredatorsInFront
-  let r 5 * killRange / 500
+  let r 5 * killRadius
   let c count predators in-cone r 40
-  ;; let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
   ifelse c > 0 [report true] [report false]
 end
 
@@ -358,20 +352,13 @@ to goStraight
 end
 
 to updateScore
-  let c count prey with [not is_dead and 3 * killRange / 500 >= distance myself]
-  if c >= 1 [
-    set points (points + 1)
-  ]
-
-  let b count prey with [not is_dead and killRange / 500 >= distance myself]
-  if b >= 1 [
-    set points (points + 2)
-  ]
-
-  ask prey with [not is_dead and killRange / 500 >= distance myself] [
-      set kills kills + 1
-      set is_dead true
-      set shape "x"
+  let extendedRange 3 * killRadius
+  ask prey with [not is_dead and killRadius >= distance myself] [
+    set kills kills + 1
+    set is_dead true
+    set shape "x"
+    ask predators in-radius extendedRange [ set points (points + 1) ]
+    ask predators in-radius killRadius [ set points (points + 2) ]
   ]
 end
 @#$#@#$#@
@@ -426,7 +413,7 @@ number-prey
 number-prey
 0
 500
-100.0
+150.0
 1
 1
 NIL
@@ -618,7 +605,7 @@ maxGenerations
 maxGenerations
 0
 1000
-0.0
+100.0
 1
 1
 NIL
@@ -654,6 +641,21 @@ averageFitness
 17
 1
 11
+
+SLIDER
+989
+259
+1161
+292
+tournamentSize
+tournamentSize
+0
+20
+5.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1001,6 +1003,30 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>highest-individual-score</metric>
+    <metric>highest-avg-fitness</metric>
+    <enumeratedValueSet variable="maxGenerations">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="killRange">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="maxSteps">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mutationChance">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-prey">
+      <value value="150"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="number-predators" first="20" step="20" last="100"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default

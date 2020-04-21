@@ -8,8 +8,8 @@ prey-own [ is_dead ]
 to setup
   clear-all
   set kills 0
-  set dist 1 / 500
-  ifelse netlogo-web? [ set max-prey 25000 ] [ set max-prey 25000 ]
+  set dist 0.005
+  ifelse netlogo-web? [ set max-prey 1000 ] [ set max-prey 1000 ]
 
   create-prey number-prey  ; create the prey, then initialize their variables
   [
@@ -17,7 +17,7 @@ to setup
     set is_dead false
     set shape  "sheep"
     set color white
-    set size 0.03  ; easier to see
+    set size 0.02
     setxy random-xcor random-ycor
   ]
 
@@ -27,10 +27,8 @@ to setup
     set heading random 360
     set shape "wolf"
     set color blue
-    set size 0.03  ; easier to see
+    set size 0.02
     setxy random-xcor random-ycor
-    ;; create-links-to prey
-    ;; create-links-to other predators
   ]
   reset-ticks
 end
@@ -52,27 +50,6 @@ to go
   tick
 end
 
-to prey-move2  ; turtle procedure goes through all the angles between -14 and 14 degrees. Checks to see which will minimise the distance from the 2 closest predators and sets that as direction.
-  let min-list []
-  let angle -14
-  let multiple 2
-  while [angle <= 14] [
-    rt angle
-    set angle angle + multiple
-    fd dist
-    let a [distance myself] of min-n-of 2 predators [distance myself]
-    let b min a
-    set b b ^ (2)
-    let c max a
-    let d sum (list b c)
-    set min-list lput d min-list
-    fd -1 / 500
-  ]
-  ; show min-list
-  let pos position max min-list min-list
-  rt multiple * pos - 14
-  fd dist
-end
 
 to prey-move
   let target min-one-of predators [distance myself]
@@ -224,7 +201,7 @@ INPUTBOX
 194
 318
 maxSteps
-500.0
+100.0
 1
 0
 Number
@@ -254,9 +231,9 @@ kills
 PLOT
 41
 541
-747
+749
 795
-Predator count and Kills
+Prey count and Kills
 time
 totals
 0.0
@@ -644,6 +621,23 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="100" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>kills</metric>
+    <enumeratedValueSet variable="number-predator">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="killRange">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-prey">
+      <value value="150"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
