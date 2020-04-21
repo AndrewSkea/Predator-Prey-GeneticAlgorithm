@@ -35,7 +35,6 @@ to setup
   reset-ticks
   set currentGeneration 0
   set kills 0
-  ;;set dist 1 / 500
   set dist 0.005
   set killRadius killRange / 500
 
@@ -605,7 +604,7 @@ maxGenerations
 maxGenerations
 0
 1000
-100.0
+500.0
 1
 1
 NIL
@@ -1004,13 +1003,14 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment" repetitions="1" runMetricsEveryStep="false">
+  <experiment name="experiment" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <metric>highest-individual-score</metric>
     <metric>highest-avg-fitness</metric>
+    <metric>kills</metric>
     <enumeratedValueSet variable="maxGenerations">
-      <value value="100"/>
+      <value value="500"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="killRange">
       <value value="10"/>
@@ -1024,7 +1024,9 @@ NetLogo 6.1.1
     <enumeratedValueSet variable="number-prey">
       <value value="150"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="number-predators" first="20" step="20" last="100"/>
+    <enumeratedValueSet variable="number-predators">
+      <value value="50"/>
+    </enumeratedValueSet>
   </experiment>
 </experiments>
 @#$#@#$#@
