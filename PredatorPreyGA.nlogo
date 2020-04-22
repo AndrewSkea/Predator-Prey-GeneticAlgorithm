@@ -42,8 +42,6 @@ to setup
   set kills 0
   set dist 0.005
   set killRadius killRange / 500
-
-  ;;these are defined by the design (agents can move/rotate, and can encounter 4 types of space so 16 states. 4 * 16 * 2 -> 128
   set no-agent-actions 4
   set no-agent-states 16
   set chromosome-length (no-agent-actions * no-agent-states)
@@ -104,7 +102,12 @@ end
 
 
 to go
-  if currentGeneration >= maxGenerations [ stop ]
+  if currentGeneration >= maxGenerations [
+    ;; only uncomment finalRun if you want to see the last generation run 100 times
+    print currentGeneration
+    finalRun
+    stop
+  ]
   if ticks < maxSteps
   [
     ask prey [
@@ -123,6 +126,43 @@ to go
   ]
 end
 
+to finalRun
+  print "Running finalRun Command"
+  reset-ticks
+  let iter 0
+  let lastKillList []
+  ;; There are 100 ticks per 'generation' and we want to run it 100 times
+  while [iter <= 100 * 100] [
+    set iter iter + 1
+
+    if ticks < maxSteps
+    [
+      ask prey [
+        if not is_dead [
+          prey-move
+        ]
+      ]
+      tick-predators
+      tick
+    ]
+    ;; once we reach maxSteps ticks we move to the next generation
+    if ticks = maxSteps
+    [
+      set lastKillList lput kills lastKillList
+      set kills 0
+      ask prey [die]
+      create-prey number-prey [setup-prey]
+      ask predators [
+        set points 0
+        setxy random-xcor random-ycor
+        set heading random 360
+      ]
+      reset-ticks
+    ]
+  ]
+  print lastKillList
+end
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,16 +171,15 @@ end
 
 to endOfCycle
   let sumFitness 0
-  print "kills: "
   set killList lput kills killList
   if kills > highest-number-kills [set highest-number-kills kills]
-  print killList
+  ;print killList
   set kills 0
   ask predators [set sumFitness (sumFitness + points)]
   set averageFitness (sumFitness / number-predators)
   set hafList lput averageFitness hafList
-  print "Average Fitness: "
-  print hafList
+  ;print "Average Fitness: "
+  ;print hafList
   if averageFitness > highest-avg-fitness [set highest-avg-fitness averageFitness]
   hatchNextGeneration
 end
@@ -558,7 +597,7 @@ mutationChance
 mutationChance
 0
 1
-0.05
+0.15
 0.01
 1
 NIL
@@ -606,7 +645,7 @@ maxGenerations
 maxGenerations
 0
 1000
-200.0
+6.0
 1
 1
 NIL
@@ -653,7 +692,7 @@ tournamentSize
 tournamentSize
 0
 20
-5.0
+8.0
 1
 1
 NIL
@@ -668,7 +707,7 @@ crossoverChance
 crossoverChance
 0
 1
-0.8
+0.7
 0.05
 1
 NIL
@@ -714,8 +753,10 @@ Each predator has an internal memory that contains a number between 0 and 15 whi
 The GA will run 100 ticks per generation and then a new world is set up. To populate this new generation, tournament selection is used. It takes a user-specified size set of randomly chosen predators and only chooses the best predator (chosen by the rules below) to get replicated in the new generation. Therefore, better predators have a higher chance of reproducing. A random element is brought in at the mutation part where the chromosome is iterated through and if a random float is smaller than the mutation probability, then that bit is set to a random state, chosen by a random agent action and agent state (in the randomState function). Each predator/chromosome may also go through the crossover action with a user-specified crossoverChance. This is where two randomly chosen predators, with this crossOver chance, swap sections of their 128 bit representation. A random slice point is taken and the first predator gets the second slice of the other predator and vice-versa.
 
 The predators throughout the generation will gain points according to the following two rules:
-If a sheep dies within the kill range it gets +3 points
-If a sheep dies within 3 times the killRange, it gets +1 point
+
+* If a sheep dies within the kill range it gets +3 points
+* If a sheep dies within 3 times the killRange, it gets +1 point
+
 At the end of each generation, the average fitness of the current population and the highest individual score is computed, saved and outputted to the interface.
 
 
@@ -1053,29 +1094,34 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <metric>highest-individual-score</metric>
     <metric>highest-avg-fitness</metric>
     <metric>kills</metric>
-    <enumeratedValueSet variable="maxGenerations">
-      <value value="500"/>
+    <metric>highest-number-kills</metric>
+    <enumeratedValueSet variable="crossoverChance">
+      <value value="0.7"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="killRange">
-      <value value="10"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maxSteps">
-      <value value="100"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mutationChance">
-      <value value="0.05"/>
+    <steppedValueSet variable="mutationChance" first="0.01" step="0.02" last="0.15"/>
+    <enumeratedValueSet variable="tournamentSize">
+      <value value="5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="number-prey">
       <value value="150"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="number-predators">
       <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="killRange">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="maxGenerations">
+      <value value="200"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="maxSteps">
+      <value value="100"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
