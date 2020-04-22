@@ -9,6 +9,8 @@ globals [
   averageFitness
   highest-avg-fitness
   highest-individual-score
+  killList
+  hafList
   no-agent-actions
   no-agent-states
   chromosome-length
@@ -34,6 +36,8 @@ to setup
   clear-all
   reset-ticks
   set currentGeneration 0
+  set killList []
+  set hafList []
   set kills 0
   set dist 0.005
   set killRadius killRange / 500
@@ -126,11 +130,15 @@ end
 
 to endOfCycle
   let sumFitness 0
+  print "kills: "
+  set killList lput kills killList
+  print killList
   set kills 0
   ask predators [set sumFitness (sumFitness + points)]
   set averageFitness (sumFitness / number-predators)
+  set hafList lput averageFitness hafList
   print "Average Fitness: "
-  print averageFitness
+  print hafList
   if averageFitness > highest-avg-fitness [set highest-avg-fitness averageFitness]
   hatchNextGeneration
 end
@@ -164,16 +172,8 @@ to hatchNextGeneration
 end
 
 
-
 to mutate-chromosomes
-
- ;; set chromosome (map (ifelse (mutationChance > random 1) [?][? -> randomState]) chromosome)
-
- ;; conditional mappings don't work in netlogo 6.x for some reason
- ;; having to use a while loop to replicate mapping
-
   set chromosome mutate-chromosome
-
 end
 
 to-report mutate-chromosome
@@ -194,7 +194,7 @@ end
 to crossOver
   let tempSet (predators with [generation = currentGeneration])
 
-  while[0.8 > random-float 1]
+  while[crossoverChance > random-float 1]
   [
     let newSet (n-of 2 tempSet)
     ;; pick a random number between 0 and 32 and swap chromosome block at that point
@@ -419,10 +419,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-36
-222
-99
-255
+34
+438
+97
+471
 NIL
 setup
 NIL
@@ -436,10 +436,10 @@ NIL
 1
 
 BUTTON
-143
-221
-206
-254
+65
+480
+169
+533
 NIL
 go
 T
@@ -468,10 +468,10 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-44
-299
-198
-359
+31
+364
+204
+424
 maxSteps
 100.0
 1
@@ -479,10 +479,10 @@ maxSteps
 Number
 
 MONITOR
-43
-428
-187
-477
+962
+72
+1106
+121
 Number of Predators
 count predators
 0
@@ -490,10 +490,10 @@ count predators
 12
 
 MONITOR
-42
-486
-147
-535
+963
+134
+1106
+183
 Number of Kills
 kills
 2
@@ -501,9 +501,9 @@ kills
 12
 
 PLOT
-41
+35
 541
-747
+1545
 795
 Predator count and Kills
 time
@@ -520,10 +520,10 @@ PENS
 "kills" 1.0 0 -13840069 true "" "plot kills"
 
 MONITOR
-44
-365
-156
-414
+962
+11
+1105
+60
 Number of Prey
 count prey with [ is_dead = false ]
 2
@@ -531,10 +531,10 @@ count prey with [ is_dead = false ]
 12
 
 BUTTON
-90
-260
-153
-293
+139
+440
+202
+473
 clear
 clear-all
 NIL
@@ -563,10 +563,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-787
-17
-869
-66
+785
+11
+946
+60
 Generation
 currentGeneration
 17
@@ -574,47 +574,47 @@ currentGeneration
 12
 
 MONITOR
-788
-83
-934
-128
+785
+72
+948
+121
 Highest Individual Score
 highest-individual-score
 17
 1
-11
+12
 
 MONITOR
-790
-145
-938
-190
+787
+134
+951
+183
 Highest Average Fitness
 highest-avg-fitness
 17
 1
-11
+12
 
 SLIDER
-791
-258
-963
-291
+34
+262
+206
+295
 maxGenerations
 maxGenerations
 0
 1000
-500.0
+100.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-790
-304
+788
+260
 1545
-796
+518
 Fitness Plot
 generation
 Fitness Value
@@ -631,27 +631,42 @@ PENS
 "averageFitness" 0.01 0 -13840069 true "" "plot averageFitness"
 
 MONITOR
-791
-201
-940
-246
+787
+198
+951
+247
 Current Average Fitness
 averageFitness
 17
 1
-11
+12
 
 SLIDER
-989
-259
-1161
-292
+35
+310
+207
+343
 tournamentSize
 tournamentSize
 0
 20
 5.0
 1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+34
+217
+206
+250
+crossoverChance
+crossoverChance
+0
+1
+0.8
+0.05
 1
 NIL
 HORIZONTAL

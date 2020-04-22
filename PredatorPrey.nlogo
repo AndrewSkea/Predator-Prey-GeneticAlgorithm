@@ -278,39 +278,59 @@ NIL
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+This model mimics predator and prey behaviour however uses a genetic algorithm to model the movement of the predators. The predators get rewarded for killing or being near prey who have died whilst the prey try to avoid the predators.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+Two agent types are spawned: predator and prey. Both agent types are randomly generated on a 500x500 pixel board with a random heading and size set to 0.02 The predators have a wolf shape whilst the prey have a sheep shape in order to distinguish them. The predators can see where all the prey and other predators are at all times and use that to hunt. Their approach is to find the closest prey (using the subtract-heading functionality) and move in their direction, with a maximum turning capability of 14 degrees.
+
+The prey use the opposite functionality and can only see where predators are. They find the closest predator and take the angle that moves them the furthest away from them, also with a maximum turn of 14 degrees.
+
+The prey have a ‘is_dead’ variable that indicates whether they have been killed. When this is set to true, their shape is set to a cross so it can be seen on the screen and then the predators won’t consider it as available prey anymore. It also increments the kill variable, which is a global variable shared by all the predators.
+
+As this board is on a 1x1 square with 500 pixels, the distance moved has been set to a static 0.005. The killRange is also calculated by the user’s input divided by 500, in order to make the input a simple integer.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+To initialise the model, move the sliders for ‘number-predator’ and ‘number-prey’ to indicate how many predators and prey you want respectively. Then, move the killRange slider to indicate how large a radius around each predator they are able to kill in. Note that the predator does not then move to the kill position as there might be several kills. Finally, input the maxSteps at which point the model will stop. Once complete, click on the setup button and then go. The setup is clicked once and randomly generates all the turtles as per the rules mentioned above and the go button runs the model until maxSteps or you click on go again.
+
+There are 3 monitors which register live the number of prey, predators and kills. The plot below also dynamically displays two coloured lines, the prey count and number of kills, over time.
 
 ## THINGS TO NOTICE
+![Sec1.Predators.png](file:Figures/Sec1.Predators.png)
+Figure 1: Number of kills for different amounts of predators
 
-(suggested things for the user to notice while running the model)
+![Sec1.killRange.png](file:Figures/Sec1.killRange.png)
+Figure 2: Number of kills for different killRange values
 
-## THINGS TO TRY
+![Sec1.Prey.png](file:Figures/Sec1.Prey.png)
+Figure 3: Number of kills for different amounts of prey
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
 
-## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
 
-## NETLOGO FEATURES
+Looking at the following Figure 1, we can see that initially an increase in number of predators leads to an increase in kills which makes sense. However, as the number of predators closes in on the number of prey which is 150, the graph flattens as there is a finite amount of prey and therefore a maximum number of kills.
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+Figure 2 performs similarly although more gradually as a large killRange increases the likelihood  that all the prey will be caught. However Figure 3 shows a near perfect linear increase in the number of kills to the number of prey with kills being around half the number of prey.
+
+In order to compare against the genetic algorithm version, the following variables were set in stone numberPredators=50, numberPrey=150, killRange=10. Over 100 repeats of this, the following results for kills were produced:
+
+* Mean		 : 81.2 
+* Median  	 : 81    
+* Mode  	 : 78    
+* Variance  	 : 68.4   
+* Std. Dev.  	 : 8.2   
+* Min  		 : 63 	
+* Max  		 : 98   
+
+Please visit the related Genetic Algorithm NetLogo file to view the comparison ([PredatorPreyGA](file:PredatorPreyGA.nlogo)).
+
+
+
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
-
-## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+A version of this model has been enhanced to include a genetic algorithm which learns the predators movements in order to increase the number of kills ([PredatorPreyGA](file:PredatorPreyGA.nlogo)).
 @#$#@#$#@
 default
 true
