@@ -9,6 +9,7 @@ globals [
   averageFitness
   highest-avg-fitness
   highest-individual-score
+  highest-number-kills
   killList
   hafList
   no-agent-actions
@@ -132,6 +133,7 @@ to endOfCycle
   let sumFitness 0
   print "kills: "
   set killList lput kills killList
+  if kills > highest-number-kills [set highest-number-kills kills]
   print killList
   set kills 0
   ask predators [set sumFitness (sumFitness + points)]
@@ -490,10 +492,10 @@ count predators
 12
 
 MONITOR
-963
-134
-1106
-183
+1303
+10
+1446
+59
 Number of Kills
 kills
 2
@@ -503,7 +505,7 @@ kills
 PLOT
 35
 541
-1545
+1449
 795
 Predator count and Kills
 time
@@ -585,10 +587,10 @@ highest-individual-score
 12
 
 MONITOR
-787
-134
-951
-183
+1127
+10
+1291
+59
 Highest Average Fitness
 highest-avg-fitness
 17
@@ -604,17 +606,17 @@ maxGenerations
 maxGenerations
 0
 1000
-100.0
+200.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-788
-260
-1545
-518
+785
+131
+1447
+521
 Fitness Plot
 generation
 Fitness Value
@@ -629,12 +631,13 @@ PENS
 "highest-avg-fitness" 0.01 0 -13345367 true "" "plot highest-avg-fitness"
 "highest-individual-score" 0.01 0 -955883 true "" "plot highest-individual-score"
 "averageFitness" 0.01 0 -13840069 true "" "plot averageFitness"
+"highestKills" 0.01 0 -5825686 true "" "plot highest-number-kills"
 
 MONITOR
-787
-198
-951
-247
+1127
+74
+1291
+123
 Current Average Fitness
 averageFitness
 17
@@ -671,42 +674,74 @@ crossoverChance
 NIL
 HORIZONTAL
 
+MONITOR
+1304
+75
+1447
+124
+Highest Number Kills
+max killList
+17
+1
+12
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+This model mimics predator and prey behaviour however uses a genetic algorithm to model the movement of the predators. The predators get rewarded for killing or being near prey who have died whilst the prey try to avoid the predators.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+The model is set up like the [non-GA version](file:PredatorPrey.nlogo) including static speeds and board size as well as the movements of prey. However, the movements of the predators are dictated by the genetic algorithm (GA).
+
+The predator has 4 sensing functions and 4 movement functions.
+Movement:
+
+* turnTowardsClosestTurtle
+* turnLeft
+* turnRight
+* goStraight
+
+Sensing:
+
+* checkIfMostPreyToLeft
+* checkIfMostPreyToRight
+* checkPreyWithin3RangesInFront
+* checkIfMostPredatorsInFront (within an cone-shape angle of 40 degrees)
+
+Each predator has an internal memory that contains a number between 0 and 15 which represents the state of the predator. It follows the rules that it’s chromosome has in place so when one of the sensing functions comes back positive then it might make a certain move. It therefore has 64 rules (one for each combination of one of 16 states and the 4 sensing functions) and each rule represents an action and a new state.
+
+The GA will run 100 ticks per generation and then a new world is set up. To populate this new generation, tournament selection is used. It takes a user-specified size set of randomly chosen predators and only chooses the best predator (chosen by the rules below) to get replicated in the new generation. Therefore, better predators have a higher chance of reproducing. A random element is brought in at the mutation part where the chromosome is iterated through and if a random float is smaller than the mutation probability, then that bit is set to a random state, chosen by a random agent action and agent state (in the randomState function). Each predator/chromosome may also go through the crossover action with a user-specified crossoverChance. This is where two randomly chosen predators, with this crossOver chance, swap sections of their 128 bit representation. A random slice point is taken and the first predator gets the second slice of the other predator and vice-versa.
+
+The predators throughout the generation will gain points according to the following two rules:
+If a sheep dies within the kill range it gets +3 points
+If a sheep dies within 3 times the killRange, it gets +1 point
+At the end of each generation, the average fitness of the current population and the highest individual score is computed, saved and outputted to the interface.
+
 
 ## HOW TO USE IT
+Many of the variables are the same as the [PredatorPrey](file:PredatorPrey.nlogo) model so please see this for more information. In addition to these, the GA version includes 4 other variables:
 
-(how to use the model, including a description of each of the items in the Interface tab)
+* mutationChance: probability a chromosome will mutate in the mutation phase of the genetic algorithm
+* crossoverChance: probability two chromosomes will swap sections of their 128 bit representation
+* maxGenerations: maximum number of generations the GA will run for
+* tournamentSize: number of chromosomes that compete in the selection phase of the GA
 
+Once these have been set (recommended to use close to default parameters), then you can click setup and then go. The values for the highest individual score, highest average fitness, current average fitness and the highest number of kills are also displayed in their appropriate box. An additional graph plots these values over the generations so you can see the increase in fitness as the GA learns.
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+Show that points not correlated 
 
-## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+A version of this model without the genetic algorithm also exists [here](file:PredatorPrey.nlogo)).
 
-## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+
+
+
 @#$#@#$#@
 default
 true
