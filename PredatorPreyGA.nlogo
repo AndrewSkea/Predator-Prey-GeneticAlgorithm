@@ -769,16 +769,48 @@ Many of the variables are the same as the [PredatorPrey](file:PredatorPrey.nlogo
 * tournamentSize: number of chromosomes that compete in the selection phase of the GA
 
 Once these have been set (recommended to use close to default parameters), then you can click setup and then go. The values for the highest individual score, highest average fitness, current average fitness and the highest number of kills are also displayed in their appropriate box. An additional graph plots these values over the generations so you can see the increase in fitness as the GA learns.
+
+
 ## THINGS TO NOTICE
 
-Show that points not correlated 
+In order to test the GA against the non-GA version, the best GA parameters had to be used. The next three plots show the number of kills whilst varying their respective parameters. It is worth noting the default variables are as follows, and the GA has been run 100 times in order to plot the averages:
 
+* number of generations: 200
+* mutation probability: 0.05
+* crossover probability: 0.8
+* tournament size: 5
+
+
+## THINGS TO NOTICE
+![Sec1.Crossover.png](file:Figures/Sec2.Crossover.png)
+Figure 1: Number of kills for different crossover probabilities
+
+![Sec2.Mutation.png](file:Figures/Sec2.Mutation.png)
+Figure 2: Number of kills for different mutation probabilities
+
+![Sec2.Tournament.png](file:Figures/Sec2.Tournament.png)
+Figure 3: Number of kills for different tournament sizes
+
+
+Although the point system allows predators to get points for being in the range of a kill, a higher number of points, or fitness, doesn't always equate to a higher number of kills. When comparing the points with the fitness over 500 runs, the spearman's rank correlation coefficient was 0.899 which shows a statitiaclly significant relation. However, as this relation is not 1, there are generations of predators that have large amount of kills but slightly less fitness scores. Therefore, when comparing the 'learnt' GA predators to that from the non-GA version, the generation that killed the most will tested, and not necessarily the ones that had the highest fitness.
+
+Looking at Figure 1 we can see that the crossover peaks at 0.7 and that 0.8 is also quite high. Figure 2 shows a peak at 0.05 which comes as default in many genetic algorithms. Figure 3 shows that the best tournament size is 8 followed closely by 6 however it is interesting that 7 is so much lower.
+
+Therefore, the values to be used are:
+
+* number of generations: 500 (for final test)
+* mutation probability: 0.05
+* crossover probability: 0.7
+* tournament size: 8
+
+For comparison with the non GA version, after the 500 generations has elapsed, the best generation, in terms of number of kills, was used to run 100 simulations of the model and the number of kills was recorded each time.
+
+To compare these results, the Mann-Whitney U Test was used. This is because there are 2, unpaired, groups and as no normality was assumed, these must be done non-parametrically. The null hypothesis assumes the medians of the two samples are identical. The alternative hypothesis assumes they are statistically different using a 5% significance level. The result was 0.00001 and is therefore significant. The median of the GA was 106 whilst the non-GA was 81, therefore the addition of the GA was beneficial for the predators.
 
 
 ## RELATED MODELS
 
 A version of this model without the genetic algorithm also exists [here](file:PredatorPrey.nlogo)).
-
 
 
 

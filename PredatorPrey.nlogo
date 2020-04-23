@@ -306,10 +306,13 @@ Figure 2: Number of kills for different killRange values
 ![Sec1.Prey.png](file:Figures/Sec1.Prey.png)
 Figure 3: Number of kills for different amounts of prey
 
+Whilst creating these plots, the default variables were as follows:
 
+* numberPredators = 50
+* numberPrey = 150
+* killRange = 10
 
-
-Looking at the following Figure 1, we can see that initially an increase in number of predators leads to an increase in kills which makes sense. However, as the number of predators closes in on the number of prey which is 150, the graph flattens as there is a finite amount of prey and therefore a maximum number of kills.
+Looking at Figure 1, we can see that initially an increase in number of predators leads to an increase in kills which makes sense. However, as the number of predators closes in on the number of prey which is 150, the graph flattens as there is a finite amount of prey and therefore a maximum number of kills.
 
 Figure 2 performs similarly although more gradually as a large killRange increases the likelihood  that all the prey will be caught. However Figure 3 shows a near perfect linear increase in the number of kills to the number of prey with kills being around half the number of prey.
 
