@@ -727,11 +727,11 @@ max killList
 @#$#@#$#@
 ## WHAT IS IT?
 
-This model mimics predator and prey behaviour however uses a genetic algorithm to model the movement of the predators. The predators get rewarded for killing or being near prey who have died whilst the prey try to avoid the predators.
+This model mimics predator and prey behaviour however uses a genetic algorithm (GA) to model the movement of the predators. The predators get rewarded for killing or being near prey who have died whilst the prey try to avoid the predators. The GA is largely based on the Eck-like-Mas model [1].
 
 ## HOW IT WORKS
 
-The model is set up like the [non-GA version](file:PredatorPrey.nlogo) including static speeds and board size as well as the movements of prey. However, the movements of the predators are dictated by the genetic algorithm (GA).
+The model is set up like the [non-GA version](file:PredatorPrey.nlogo) including static speeds and board size as well as the movements of prey. However, the movements of the predators are dictated by the GA.
 
 The predator has 4 sensing functions and 4 movement functions.
 Movement:
@@ -750,7 +750,7 @@ Sensing:
 
 Each predator has an internal memory that contains a number between 0 and 15 which represents the state of the predator. It follows the rules that it’s chromosome has in place so when one of the sensing functions comes back positive then it might make a certain move. It therefore has 64 rules (one for each combination of one of 16 states and the 4 sensing functions) and each rule represents an action and a new state.
 
-The GA will run 100 ticks per generation and then a new world is set up. To populate this new generation, tournament selection is used. It takes a user-specified size set of randomly chosen predators and only chooses the best predator (chosen by the rules below) to get replicated in the new generation. Therefore, better predators have a higher chance of reproducing. A random element is brought in at the mutation part where the chromosome is iterated through and if a random float is smaller than the mutation probability, then that bit is set to a random state, chosen by a random agent action and agent state (in the randomState function). Each predator/chromosome may also go through the crossover action with a user-specified crossoverChance. This is where two randomly chosen predators, with this crossOver chance, swap sections of their 128 bit representation. A random slice point is taken and the first predator gets the second slice of the other predator and vice-versa.
+The GA will run 100 ticks per generation and then a new world is set up. To populate this new generation, tournament selection is used [2]. It takes a user-specified size set of randomly chosen predators and only chooses the best predator (chosen by the rules below) to get replicated in the new generation. Therefore, better predators have a higher chance of reproducing. A random element is brought in at the mutation part where the chromosome is iterated through and if a random float is smaller than the mutation probability, then that bit is set to a random state, chosen by a random agent action and agent state (in the randomState function). Each predator/chromosome may also go through the crossover action with a user-specified crossoverChance. This is where two randomly chosen predators, with this crossOver chance, swap sections of their 128 bit representation. A random slice point is taken and the first predator gets the second slice of the other predator and vice-versa.
 
 The predators throughout the generation will gain points according to the following two rules:
 
@@ -811,6 +811,19 @@ To compare these results, the Mann-Whitney U Test was used. This is because ther
 ## RELATED MODELS
 
 A version of this model without the genetic algorithm also exists [here](file:PredatorPrey.nlogo)).
+
+## EXTENDING THE MODEL
+
+Ideally the sensing functions and movement options would be extended so the predators could learn to do more complex moves. Other types of functions could also be added such as sharing functions between predators using the theory of kin selection and altruism between predators to increase the number of kills or fitness [3].
+
+## REFERENCES
+
+[1] D. Eck, “Genetic Algorithms Demo in JavaScript,” Genetic Algorithms Demo in JavaScript. [Online]. Available: http://math.hws.edu/eck/jsdemo/jsGeneticAlgorithm.html. [Accessed: 24-Apr-2020].
+
+[2] D. Kazakov and D. Franks, “Genetic Algorithms,” in Genetic Algorithms.
+
+[3] D. Kazakov, "Evolutionary algorithms with extended fitness." REPORT-UNIVERSITY OF YORK DEPARTMENT OF COMPUTER SCIENCE YCS (2004) [Accessed: 24-Apr-2020].
+
 
 
 
